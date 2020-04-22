@@ -2,7 +2,7 @@
 ///Author: YoungChan
 ///Date: 2020-04-11 15:17:06
 ///LastEditors: YoungChan
-///LastEditTime: 2020-04-22 17:45:42
+///LastEditTime: 2020-04-23 00:08:59
 ///Description: file content
 ///
 import 'dart:io';
@@ -24,9 +24,10 @@ main(List<String> arguments) async {
     stdout.writeln('No file found');
   } else {
     var ast = await generate(paths[0]);
-    var astRuntime = AstRuntime(ast);
-    var res = await astRuntime.callFunction('incTen', params: [100]);
-    stdout.writeln('Invoke incTec(100) result: $res');
+    //测试Runtime
+    // var astRuntime = AstRuntime(ast);
+    // var res = await astRuntime.callFunction('incTen', params: [100]);
+    // stdout.writeln('Invoke incTec(100) result: $res');
   }
 }
 
@@ -146,6 +147,69 @@ class MyAstVisitor extends SimpleAstVisitor<Map> {
         "argument": argument,
       };
 
+  Map _buildMethodDeclaration(
+          Map id, Map parameters, Map typeParameters, Map body, Map returnType,
+          {bool isAsync: false}) =>
+      {
+        "type": "MethodDeclaration",
+        "id": id,
+        "parameters": parameters,
+        "typeParameters": typeParameters,
+        "body": body,
+        "isAsync": isAsync,
+        "returnType": returnType,
+      };
+
+  Map _buildNamedExpression(Map id, Map expression) => {
+        "type": "NamedExpression",
+        "id": id,
+        "expression": expression,
+      };
+
+  Map _buildPrefixedIdentifier(Map identifier, Map prefix) => {
+        "type": "PrefixedIdentifier",
+        "identifier": identifier,
+        "prefix": prefix,
+      };
+
+  Map _buildMethodInvocation(Map callee, Map typeArguments, Map argumentList) =>
+      {
+        "type": "MethodInvocation",
+        "callee": callee,
+        "typeArguments": typeArguments,
+        "argumentList": argumentList,
+      };
+
+  Map _buildClassDeclaration(Map id, Map superClause, Map implementsClause,
+          Map mixinClause, List<Map> metadata, List<Map> body) =>
+      {
+        "type": "ClassDeclaration",
+        "id": id,
+        "superClause": superClause,
+        "implementsClause": implementsClause,
+        "mixinClause": mixinClause,
+        'metadata': metadata,
+        "body": body,
+      };
+
+  Map _buildArgumentList(List<Map> argumentList) =>
+      {"type": "ArgumentList", "argumentList": argumentList};
+
+  Map _buildStringLiteral(String value) =>
+      {"type": "StringLiteral", "value": value};
+
+  Map _buildBooleanLiteral(bool value) =>
+      {"type": "BooleanLiteral", "value": value};
+
+  Map _buildImplementsClause(List<Map> implementList) =>
+      {"type": "ImplementsClause", "implements": implementList};
+
+  Map _buildPropertyAccess(Map id, Map expression) => {
+        "type": "PropertyAccess",
+        "id": id,
+        "expression": expression,
+      };
+
   @override
   Map visitCompilationUnit(CompilationUnit node) {
     return _buildAstRoot(_safelyVisitNodeList(node.declarations));
@@ -232,6 +296,98 @@ class MyAstVisitor extends SimpleAstVisitor<Map> {
   Map visitReturnStatement(ReturnStatement node) {
     return _buildReturnStatement(_safelyVisitNode(node.expression));
   }
+
+  @override
+  visitMethodDeclaration(MethodDeclaration node) {
+    return _buildMethodDeclaration(
+        _safelyVisitNode(node.name),
+        _safelyVisitNode(node.parameters),
+        _safelyVisitNode(node.typeParameters),
+        _safelyVisitNode(node.body),
+        _safelyVisitNode(node.returnType),
+        isAsync: node.body.isAsynchronous);
+  }
+
+  @override
+  visitNamedExpression(NamedExpression node) {
+    return _buildNamedExpression(
+        _safelyVisitNode(node.name), _safelyVisitNode(node.expression));
+  }
+
+  @override
+  visitPrefixedIdentifier(PrefixedIdentifier node) {
+    return _buildPrefixedIdentifier(
+        _safelyVisitNode(node.identifier), _safelyVisitNode(node.prefix));
+  }
+
+  @override
+  visitMethodInvocation(MethodInvocation node) {
+    Map callee;
+    if (node.target != null) {
+      node.target.accept(this);
+      callee = {
+        "type": "MemberExpression",
+        "object": _safelyVisitNode(node.target),
+        "property": _safelyVisitNode(node.methodName),
+      };
+    } else {
+      callee = _safelyVisitNode(node.methodName);
+    }
+    return _buildMethodInvocation(callee, _safelyVisitNode(node.typeArguments),
+        _safelyVisitNode(node.argumentList));
+  }
+
+  @override
+  visitClassDeclaration(ClassDeclaration node) {
+    return _buildClassDeclaration(
+        _safelyVisitNode(node.name),
+        _safelyVisitNode(node.extendsClause),
+        _safelyVisitNode(node.implementsClause),
+        _safelyVisitNode(node.withClause),
+        _safelyVisitNodeList(node.metadata),
+        _safelyVisitNodeList(node.members));
+  }
+
+  @override
+  visitSimpleStringLiteral(SimpleStringLiteral node) {
+    return _buildStringLiteral(node.value);
+  }
+
+  @override
+  visitBooleanLiteral(BooleanLiteral node) {
+    return _buildBooleanLiteral(node.value);
+  }
+
+  @override
+  visitArgumentList(ArgumentList node) {
+    return _buildArgumentList(_safelyVisitNodeList(node.arguments));
+  }
+
+  @override
+  visitLabel(Label node) {
+    return _safelyVisitNode(node.label);
+  }
+
+  @override
+  visitExtendsClause(ExtendsClause node) {
+    return _safelyVisitNode(node.superclass);
+  }
+
+  @override
+  visitImplementsClause(ImplementsClause node) {
+    return _buildImplementsClause(_safelyVisitNodeList(node.interfaces));
+  }
+
+  @override
+  visitWithClause(WithClause node) {
+    return _safelyVisitNode(node);
+  }
+
+  @override
+  visitPropertyAccess(PropertyAccess node) {
+    return _buildPropertyAccess(
+        _safelyVisitNode(node.propertyName), _safelyVisitNode(node.target));
+  }
 }
 
 ///生成AST
@@ -247,7 +403,7 @@ Future generate(String path) async {
         var compilationUnit = parseResult.unit;
         //遍历AST
         var astData = compilationUnit.accept(MyAstVisitor());
-        // stdout.writeln(jsonEncode(astData));
+        stdout.writeln(jsonEncode(astData));
         return Future.value(astData);
       } catch (e) {
         stdout.writeln('Parse file error: ${e.toString()}');

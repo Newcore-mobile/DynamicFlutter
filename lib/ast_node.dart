@@ -4,7 +4,7 @@ import 'dart:io';
 ///Author: YoungChan
 ///Date: 2020-03-12 22:27:58
 ///LastEditors: YoungChan
-///LastEditTime: 2020-04-22 17:41:36
+///LastEditTime: 2020-04-22 23:45:35
 ///Description: file content
 ///
 enum AstNodeName {
@@ -636,13 +636,9 @@ class AwaitExpression extends AstNode {
 class ClassDeclaration extends AstNode {
   String name;
   String superClause;
-  String implementsClause;
-  String mixinClause;
   List<Expression> body;
 
-  ClassDeclaration(this.name, this.superClause, this.implementsClause,
-      this.mixinClause, this.body,
-      {Map ast})
+  ClassDeclaration(this.name, this.superClause, this.body, {Map ast})
       : super(ast: ast);
 
   factory ClassDeclaration.fromAst(Map ast) {
@@ -653,12 +649,8 @@ class ClassDeclaration extends AstNode {
       for (var arg in astBody) {
         bodies.add(Expression.fromAst(arg));
       }
-      return ClassDeclaration(
-          Identifier.fromAst(ast['id']).name,
-          Identifier.fromAst(ast['superClause'])?.name,
-          Identifier.fromAst(ast['implementsClause'])?.name,
-          Identifier.fromAst(ast['mixinClause'])?.name,
-          bodies,
+      return ClassDeclaration(Identifier.fromAst(ast['id']).name,
+          TypeName.fromAst(ast['superClause'])?.name, bodies,
           ast: ast);
     }
     return null;
@@ -989,6 +981,7 @@ class Expression extends AstNode {
   }) : super(ast: ast);
 
   factory Expression.fromAst(Map ast) {
+    if (ast == null) return null;
     var astType = ast['type'];
     if (astType == astNodeNameValue(AstNodeName.Program)) {
       return Expression(Program.fromAst(ast), isProgram: true, ast: ast);
@@ -1049,7 +1042,7 @@ class Expression extends AstNode {
       return Expression(FieldDeclaration.fromAst(ast),
           isFieldDeclaration: true, ast: ast);
     } else if (astType == astNodeNameValue(AstNodeName.FunctionExpression)) {
-      return Expression(FieldDeclaration.fromAst(ast),
+      return Expression(FunctionExpression.fromAst(ast),
           isFunctionExpression: true, ast: ast);
     } else if (astType == astNodeNameValue(AstNodeName.BlockStatement)) {
       return Expression(BlockStatement.fromAst(ast),

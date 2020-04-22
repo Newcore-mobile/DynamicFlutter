@@ -1,5 +1,5 @@
-name: flutterhot
-description: A new Flutter package.
+name: dynamicflutter
+description: Flutter 动态化热更新的思考与实践.
 version: 0.0.1
 author: NewcoreMobile
 homepage: https://c2.xinheyun.com
@@ -10,10 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  ncf_ui:
-    git:
-      url: https://g.newcoretech.com/mobile/ncfui.git
-      ref: master
+
   args: ^1.5.0
   analyzer: ^0.39.2+1
   yaml:
