@@ -448,7 +448,7 @@ Future _executeAssignmentExpression(AssignmentExpression assignmentExpression,
     case '+=':
       rightValue = leftValue + rightValue;
       break;
-    case '+=':
+    case '-=':
       rightValue = leftValue - rightValue;
       break;
     case '*=':
